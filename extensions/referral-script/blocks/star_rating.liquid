@@ -1,0 +1,57 @@
+{% assign avg_rating = block.settings.product.metafields.demo.avg_rating.value | round %}
+<span style="color:{{ block.settings.colour }}">
+  {% render 'stars', rating: avg_rating %}
+</span>
+{% if avg_rating >= 4 %}
+  <br>
+  <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
+  {{ 'ratings.home.recommendationText' | t }}
+{% endif %}
+
+{% if customer %}
+  <div id="referral-widget" style="margin-top: 20px;">
+    <button id="share-referral-btn" style="
+      padding: 12px 16px;
+      background: #000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    ">
+      🎁 Share & Earn
+    </button>
+
+    <div id="referral-link-box" style="display:none; margin-top:10px;">
+      <input
+        type="text"
+        id="referral-link"
+        readonly
+        style="width:100%; padding:8px;"
+      />
+      <button id="copy-referral" style="margin-top:8px;">
+        Copy Link
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.LOGGED_IN_CUSTOMER_ID = "{{ customer.id }}";
+    window.SHOP_DOMAIN = "{{ shop.permanent_domain }}";
+    window.APP_URL = "{{ app.url }}";
+  </script>
+{% endif %}
+
+
+<script src="{{ 'referral.js' | asset_url }}" defer></script>
+
+
+{% schema %}
+{
+  "name": "Star Rating",
+  "target": "section",
+  "settings": [
+    { "type": "product", "id": "product", "label": "product", "autofill": true },
+    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ff0000" }
+  ]
+}
+{% endschema %}
+

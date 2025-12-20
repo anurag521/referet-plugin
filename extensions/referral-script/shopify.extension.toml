@@ -1,0 +1,4 @@
+name = "referral-script"
+type = "theme_app_extension"
+extension_points = ["product"]
+uid = "0234535d-b2ea-c56f-7681-7e79c89ca743ce3a5fee"
