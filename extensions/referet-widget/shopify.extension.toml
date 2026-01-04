@@ -1,0 +1,9 @@
+api_version = "2024-07"
+
+[[extensions]]
+
+uid = "85daae97-9f2a-efc6-a5b4-cec9b96ebcb1c0a24fd3"
+
+type = "theme_app_extension"
+name = "Referral Widget"
+handle = "referet-widget"

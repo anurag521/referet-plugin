@@ -1,0 +1,70 @@
+{% schema %}
+{
+  "name": "Referral Widget",
+  "target": "section",
+  "stylesheet": "referral-widget.css",
+  "javascript": "referral-widget.js",
+  "settings": [
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Color",
+      "default": "#000000"
+    },
+    {
+        "type": "text",
+        "id": "button_text",
+        "label": "Button Text",
+        "default": "Refer & Earn"
+    }
+  ]
+}
+{% endschema %}
+
+<div id="referet-widget-container" 
+     data-shop="{{ shop.permanent_domain }}" 
+     data-product-id="{{ product.id }}"
+     data-collection-ids="{{ product.collections | map: 'id' | join: ',' }}"
+     data-customer-id="{{ customer.id }}"
+     data-logged-in="{% if customer %}true{% else %}false{% endif %}">
+  
+    <!-- ALWAYS VISIBLE BUTTON (Hidden initially, shown by JS if campaign active) -->
+    <button id="referet-btn" 
+            style="display: none; background-color: {{ block.settings.button_color }}; color: white; padding: 10px 20px; border: none; cursor: pointer; width: 100%;">
+        {{ block.settings.button_text }}
+    </button>
+      
+    {% if customer %}
+      <!-- Logged In: Generation Modal -->
+      <div id="referet-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+          <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; position: relative;">
+              <span id="referet-close" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+              <h2 id="referet-reward-text" style="font-size: 1.5em; margin-bottom: 20px; text-align: center;">Refer & Earn</h2>
+              
+              <div id="referet-loading" style="text-align: center; display: none;">
+                  <p>Generating your exclusive link...</p>
+              </div>
+  
+              <div id="referet-result" style="display: none; text-align: center;">
+                  <p>Here is your referral link:</p>
+                  <div style="display: flex; gap: 10px; margin: 10px 0;">
+                      <input type="text" id="referet-link" readonly style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                      <button id="referet-copy-btn" style="padding: 10px; background-color: #eee; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Copy</button>
+                  </div>
+              </div>
+              
+              <p id="referet-error" style="color: red; display: none; margin-top: 10px; text-align: center;"></p>
+          </div>
+      </div>
+    {% else %}
+      <!-- Guest: Login Modal -->
+      <div id="referet-guest-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+          <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 8px; position: relative; text-align: center;">
+             <span id="referet-guest-close" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+             <h2>Join the Program</h2>
+             <p style="margin: 20px 0;">Login to create your referral link and earn rewards.</p>
+             <a href="/account/login" style="background-color: {{ block.settings.button_color }}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Login Now</a>
+          </div>
+      </div>
+    {% endif %}
+  </div>

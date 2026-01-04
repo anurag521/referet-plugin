@@ -1,0 +1,41 @@
+<script>
+  window.refertle_app_url = "https://edmond-mouthier-ununiquely.ngrok-free.dev";
+  window.refertle_customer_id = "{{ customer.id }}";
+</script>
+
+<div class="refertle-widget refertle-wallet" style="padding: {{ block.settings.padding }}px; color: {{ block.settings.color }};">
+  <span class="refertle-label">{{ block.settings.label }}</span>
+  <span id="refertle-wallet-value" class="refertle-value">...</span>
+</div>
+
+{% schema %}
+{
+  "name": "Wallet Balance",
+  "target": "section",
+  "javascript": "refertle-widgets.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Label",
+      "default": "My Wallet:"
+    },
+    {
+      "type": "color",
+      "id": "color",
+      "label": "Text Color",
+      "default": "#000000"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "unit": "px",
+      "label": "Padding",
+      "default": 10
+    }
+  ]
+}
+{% endschema %}
