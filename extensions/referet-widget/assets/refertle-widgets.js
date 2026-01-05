@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Format Currency
                 const formatter = new Intl.NumberFormat('en-US', {
                     style: 'currency',
-                    currency: data.currency || 'USD',
+                    currency: data.currency || 'INR',
                 });
                 walletContainer.innerText = formatter.format(data.wallet);
             }

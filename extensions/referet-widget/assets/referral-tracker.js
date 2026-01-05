@@ -26,26 +26,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const storedRefCode = localStorage.getItem('referet_ref_code');
+    const productId = tracker.dataset.productId;
+    const collectionIds = tracker.dataset.collectionIds || '';
 
-    // --- 2. Guest Handling (Show Guest Modal) ---
-    if (!isLoggedIn && storedRefCode) {
-        console.log("Referet (Global): Guest detected with referral code. Prompting login.");
+    // --- Helper: Simple Toast to show messages ---
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `referet-toast referet-toast-${type}`;
+        toast.textContent = message;
 
-        const guestModal = document.getElementById('referet-guest-modal');
-        const guestClose = document.getElementById('referet-guest-close');
-        if (guestModal) {
-            setTimeout(() => guestModal.style.display = 'block', 1000);
-            if (guestClose) guestClose.addEventListener('click', () => guestModal.style.display = 'none');
-            window.addEventListener('click', (e) => { if (e.target == guestModal) guestModal.style.display = 'none'; });
+        Object.assign(toast.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            backgroundColor: type === 'error' ? '#ff4d4f' : (type === 'success' ? '#52c41a' : '#faad14'),
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '4px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: '10000',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            transition: 'opacity 0.3s ease'
+        });
+
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Check Campaign first to see if rewards are even active
+    async function checkCurrentCampaign() {
+        if (!storedRefCode) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/public/campaigns/check?shop=${shop}&product_id=${productId}&collection_ids=${collectionIds}`, {
+                headers: { "ngrok-skip-browser-warning": "true" }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.active) {
+                    console.log("Referet: Active campaign found for this page context.");
+
+                    if (!isLoggedIn) {
+                        console.log("Referet (Global): Guest detected with referral code. Prompting login.");
+                        const guestModal = document.getElementById('referet-guest-modal');
+                        const guestClose = document.getElementById('referet-guest-close');
+                        if (guestModal) {
+                            setTimeout(() => guestModal.style.display = 'block', 1000);
+                            if (guestClose) guestClose.addEventListener('click', () => guestModal.style.display = 'none');
+                        }
+                    } else {
+                        performClaim();
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Referet: Campaign check failed", e);
         }
     }
 
-    // --- 3. Logged In Handling (Claim Reward via Public API) ---
-    else if (isLoggedIn && storedRefCode) {
+    function performClaim() {
         console.log("Referet (Global): User logged in with pending referral code. Validating...");
         const customerId = tracker.dataset.customerId;
 
-        // Call Backend to Validate/Claim (Updated to Public API)
         fetch(`${API_BASE}/api/public/referrals/claim?shop=${shop}`, {
             method: 'POST',
             headers: {
@@ -62,44 +107,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Referet: Validation Response", data);
 
                 if (data.valid) {
-                    // Success!
-                    localStorage.removeItem('referet_ref_code'); // Clear it so it doesn't run again
+                    showToast("Referral Applied! Enjoy your reward 🎁", "success");
+                    localStorage.removeItem('referet_ref_code');
 
-                    // Optional: If backend returns a discount code, you can try to auto-apply it
                     if (data.discount_code) {
-                        try {
-                            fetch(`/discount/${data.discount_code}`).then(() => console.log("Discount applied to session"));
-                        } catch (e) { console.error("Failed to auto-apply discount", e); }
+                        fetch(`/discount/${data.discount_code}`).catch(e => console.error("Discount apply failed", e));
                     }
 
-                    // --- ALWAYS Attach Attribute to Cart (Vital for Backend Webhook Tracking) ---
-                    // Do this regardless of discount code availability
-                    console.log("Referet: Attempting to save Cart Attribute...");
+                    // Attach Attribute to Cart
                     const attachAttribute = () => {
                         fetch('/cart/update.js', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ attributes: { 'referral_code': storedRefCode } })
-                        })
-                            .then(res => res.json())
-                            .then(cart => {
-                                console.log("Referet: Cart Attribute Saved", cart.attributes);
-                                // Simple retry if not saved (sometimes cart is busy)
-                                if (!cart.attributes || cart.attributes.referral_code !== storedRefCode) {
-                                    console.warn("Referet: Attribute mismatch, retrying in 2s...");
-                                    setTimeout(attachAttribute, 2000);
-                                }
-                            })
-                            .catch(e => console.error("Referet: Failed to save attribute", e));
+                        }).catch(e => console.error("Referet: Failed to save attribute", e));
                     };
-
-                    // Delay slightly to ensure cart exists or discount fetch didn't lock it
                     setTimeout(attachAttribute, 500);
 
                 } else {
                     console.warn("Referet: Invalid Referral Code", data.message);
+                    if (data.error_code === 'SELF_REFERRAL') {
+                        showToast("Self-referral not allowed 😅", "error");
+                        localStorage.removeItem('referet_ref_code');
+                    }
                 }
             })
-            .catch(err => console.error("Referet: Validation Failed", err));
+            .catch(err => console.error("Referet: Claim Failed", err));
     }
+
+    checkCurrentCampaign();
 });
