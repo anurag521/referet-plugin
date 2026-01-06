@@ -141,16 +141,7 @@ export default function Index() {
                             </BlockStack>
                         </Card>
 
-                        {isSignedUp && isAuthenticated && (
-                            <Card>
-                                <BlockStack gap="500">
-                                    <Text as="h2" variant="headingMd">Quick Stats</Text>
-                                    <Text as="p">Referrals: 0</Text>
-                                    <Text as="p">Revenue: $0.00</Text>
-                                </BlockStack>
-                            </Card>
-                        )}
-
+                        
                     </Layout.Section>
                 </Layout>
             </BlockStack>

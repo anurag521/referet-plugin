@@ -3,15 +3,26 @@
   window.refertle_customer_id = "{{ customer.id }}";
 </script>
 
-<div class="refertle-widget refertle-points" style="padding: {{ block.settings.padding }}px; color: {{ block.settings.color }};">
-  <span class="refertle-label">{{ block.settings.label }}</span>
-  <span id="refertle-points-value" class="refertle-value">...</span>
+{% if customer %}
+<div class="refertle-widget-wrapper refertle-points" style="padding: {{ block.settings.padding }}px;">
+  <button id="refertle-points-btn" class="refertle-btn" style="color: {{ block.settings.color }}; border-color: {{ block.settings.color }};">
+    {{ block.settings.label }} <span id="refertle-points-value">...</span>
+  </button>
+  
+  <div id="refertle-points-popover" class="refertle-popover">
+     <h3>Points Details</h3>
+     <p>Current Balance: <span id="refertle-points-popover-value" class="highlight">0</span></p>
+     <p>Value: 1 Point = <span id="refertle-point-rate" class="highlight">...</span></p>
+     <p>Expires: <span id="refertle-point-expiry" class="highlight">...</span></p>
+  </div>
 </div>
+{% endif %}
 
 {% schema %}
 {
   "name": "Points Balance",
   "target": "section",
+  "stylesheet": "referral-widget.css",
   "javascript": "refertle-widgets.js",
   "settings": [
     {

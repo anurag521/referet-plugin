@@ -21,73 +21,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const guestModal = document.getElementById('referet-guest-modal');
     const guestClose = document.getElementById('referet-guest-close');
 
-    const API_BASE = "https://edmond-mouthier-ununiquely.ngrok-free.dev";
+    // SAFETY: Check if process is defined to prevent browser reference errors
+    const envUrl = (typeof process !== 'undefined' && process.env) ? process.env.SHOPIFY_APP_URL : null;
+    const API_BASE = envUrl || window.refertle_app_url || "https://edmond-mouthier-ununiquely.ngrok-free.dev";
     let campaignId = null;
 
-    // --- 1. Referral Tracking Logic (Referee URL Capture) ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
+    // --- DESIGN MODE PREVIEW ---
+    // Check if we are in the Shopify Theme Editor
+    const isDesignMode = (window.Shopify && window.Shopify.designMode) || false;
 
-    if (refCode) {
-        console.log("Referet: Captured referral code:", refCode);
-        localStorage.setItem('referet_ref_code', refCode);
-
-        // --- TRACK CLICK IMMEDIATELY ---
-        fetch(`${API_BASE}/api/public/referrals/click?shop=${shop}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            body: JSON.stringify({ code: refCode })
-        }).catch(err => console.error("Referet: Tracking failed", err));
-    }
-
-    const storedRefCode = localStorage.getItem('referet_ref_code');
-
-    // Guest Handling: If guest AND has ref code, show "Login" modal automatically
-    if (!isLoggedIn && storedRefCode) {
-        console.log("Referet: Guest detected with referral code. Prompting login.");
-        if (guestModal) {
-            setTimeout(() => {
-                guestModal.style.display = 'block';
-            }, 1000);
+    if (isDesignMode) {
+        console.log("Referet: Design Mode Detected. Forcing widget visibility.");
+        if (btn) {
+            btn.style.display = 'block';
+            btn.textContent = "Refer & Earn 10% (Preview)";
+            // Disable click in editor or let it open modal with dummy data?
+            // Usually, just showing it is enough for layout checks.
         }
-    } else if (isLoggedIn && storedRefCode) {
-        // --- LOGGED IN: AUTO-CLAIM ---
-        console.log("Referet: User logged in with code. Attempting claim... CustomerID:", customerId);
-        fetch(`${API_BASE}/api/public/referrals/claim?shop=${shop}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            body: JSON.stringify({
-                code: storedRefCode,
-                customer_id: customerId
-            })
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Referet: Claim Response", data);
-                if (data.valid) {
-                    // Success! Show Toast
-                    showToast("Referral applied successfully!", "success");
-                    // Clear storage so we don't spam the API on every page load
-                    localStorage.removeItem('referet_ref_code');
-                } else {
-                    // Check for specific error codes for Toast
-                    if (data.error_code === 'SELF_REFERRAL') {
-                        showToast("Nice try! You cannot refer yourself 😅", "error");
-                        localStorage.removeItem('referet_ref_code'); // Clear it so it doesn't annoy them
-                    } else if (data.error_code === 'ALREADY_CLAIMED') {
-                        showToast("You have already claimed a referral reward!", "warning");
-                        localStorage.removeItem('referet_ref_code');
-                    }
-                }
-            })
-            .catch(err => console.error("Referet: Claim failed", err));
+        // Return early to skip API logic which might fail in editor
+        return;
     }
+
+    // --- 1. Cleanup Stored Code (UI purposes only) ---
+    // We let the global tracker handle the actual claim and tracking.
+    // We just check if it was recently cleared.
 
     // --- Helper: Simple Toast to show messages ---
     function showToast(message, type = 'info') {
