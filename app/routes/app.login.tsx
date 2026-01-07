@@ -12,6 +12,7 @@ import {
     Button,
     Banner,
     Link,
+    Modal,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { apiCallRaw } from "../api.server";
@@ -65,7 +66,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return redirect("/app", { headers });
     } catch (error: any) {
         console.error("Login Server Error:", error);
-        return { error: "Login failed. Server error." };
+        let message = error.message || "Login failed.";
+
+        const match = message.match(/^API Error \d+: (.+)$/);
+        if (match) {
+            try {
+                const json = JSON.parse(match[1]);
+                if (json.message) message = json.message;
+                else message = match[1];
+            } catch (e) {
+                message = match[1];
+            }
+        }
+        return { error: message };
     }
 };
 
@@ -84,6 +97,16 @@ export default function Login() {
             navigate("/app");
         }
     }, [isAuthenticated, navigate]);
+
+    const [showErrorModal, setShowErrorModal] = useState(false);
+
+    useEffect(() => {
+        if (actionData?.error) {
+            setShowErrorModal(true);
+        }
+    }, [actionData]);
+
+    const handleCloseModal = () => setShowErrorModal(false);
 
     const isSubmitting = nav.state === "submitting";
 
@@ -112,15 +135,28 @@ export default function Login() {
                     <Layout.Section>
                         <Card>
                             <BlockStack gap="500">
+                                <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                                    <img src="/logo.png" alt="Refertle Logo" style={{ maxHeight: '80px', width: 'auto' }} />
+                                </div>
                                 <Text as="h2" variant="headingMd">
                                     Login for {shop}
                                 </Text>
 
-                                {actionData?.error && (
-                                    <Banner tone="critical">
-                                        <p>{actionData.error}</p>
-                                    </Banner>
-                                )}
+                                <Modal
+                                    open={showErrorModal}
+                                    onClose={handleCloseModal}
+                                    title="Login Error"
+                                    primaryAction={{
+                                        content: 'Close',
+                                        onAction: handleCloseModal,
+                                    }}
+                                >
+                                    <Modal.Section>
+                                        <Banner tone="critical">
+                                            <p>{actionData?.error}</p>
+                                        </Banner>
+                                    </Modal.Section>
+                                </Modal>
 
                                 <Form method="post">
                                     <BlockStack gap="400">

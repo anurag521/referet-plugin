@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isLoggedIn = tracker.dataset.loggedIn === 'true';
     const shop = tracker.dataset.shop;
-    const API_BASE = "https://edmond-mouthier-ununiquely.ngrok-free.dev";
+    // Use global config if available, else fallback
+    const API_BASE = window.refertle_app_url || "https://edmond-mouthier-ununiquely.ngrok-free.dev";
 
     // --- 1. Capture Referral Code ---
     const urlParams = new URLSearchParams(window.location.search);
@@ -71,12 +72,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (!isLoggedIn) {
                         console.log("Referet (Global): Guest detected with referral code. Prompting login.");
+
+                        // 1. Show Guest Modal (as before)
                         const guestModal = document.getElementById('referet-guest-modal');
                         const guestClose = document.getElementById('referet-guest-close');
                         if (guestModal) {
                             setTimeout(() => guestModal.style.display = 'block', 1000);
                             if (guestClose) guestClose.addEventListener('click', () => guestModal.style.display = 'none');
                         }
+
+                        // 2. CRITICAL: Validate & Apply Discount for Guest Session immediately
+                        // This ensures they see the discount at checkout even if they don't log in yet.
+                        performClaim();
                     } else {
                         performClaim();
                     }
@@ -111,7 +118,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('referet_ref_code');
 
                     if (data.discount_code) {
+                        // 1. Standard Cookie Method (Backup)
                         fetch(`/discount/${data.discount_code}`).catch(e => console.error("Discount apply failed", e));
+
+                        // 2. ROBUST FORM INJECTION
+                        // This forces the discount code to be carried over to the Checkout page 
+                        // when the user clicks "Check out" in the Cart Drawer.
+                        const injectDiscount = () => {
+                            const forms = document.querySelectorAll('form[action^="/cart"], form[action^="/checkout"]');
+                            forms.forEach(form => {
+                                // Check if we already injected
+                                if (!form.querySelector('input[name="discount"]')) {
+                                    console.log("Referet: Injecting discount code into checkout form", data.discount_code);
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = 'discount';
+                                    input.value = data.discount_code;
+                                    form.appendChild(input);
+                                }
+                            });
+                        };
+
+                        // Run once immediately
+                        injectDiscount();
+
+                        // Run whenever the DOM changes (e.g., Cart Drawer opens)
+                        // This ensures "Edge Case" coverage for AJAX carts.
+                        const observer = new MutationObserver(() => injectDiscount());
+                        observer.observe(document.body, { childList: true, subtree: true });
                     }
 
                     // Attach Attribute to Cart

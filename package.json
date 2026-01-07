@@ -1,5 +1,5 @@
 {
-  "name": "referral-system",
+  "name": "refertle",
   "private": true,
   "scripts": {
     "build": "react-router build",

@@ -1,0 +1,13 @@
+Module (Flow),Issues,Desktop,Mobile UI,Action
+Shopify Integration,OAuth flow errors during installation,"1. Open Shopify App Store -> 2. Install App -> 3. Approve permissions","1. Open Shopify Admin on mobile browser -> 2. Install App",Verify successful redirect to dashboard
+Merchant Auth,Signup fails or prevents access,"1. Go to Signup page -> 2. Enter email/merchant name -> 3. Save","1. Access signup via mobile dashboard",Confirm account creation and auto-login
+Merchant Auth,Login fails for existing account,"1. Enter credentials -> 2. Login","1. Enter credentials via mobile keypad",Dashboard should load merchant data
+Product Management,Product sync fails to pull data,"1. Go to dashboard -> 2. Click 'Sync Products'","1. Tap 'Sync Products' on mobile",Check if product list updates from Shopify
+Referral Strategy,Campaign text not saving,"1. Edit campaign -> 2. Change 'Refer & Earn' text -> 3. Save","1. Edit campaign text on mobile",Verify text updates in storefront widget
+Storefront Widget,Widget doesn't appear on Product Page,1. Navigate to any Product Page on Desktop,1. Navigate to Product Page on Mobile Chrome/Safari,Confirm 'Refer & Earn' button is visible
+Storefront Widget,Modals not responsive or cutting off,"1. Open widget -> 2. View Modal","1. Open widget -> 2. Check modal width and close button",Ensure button and input are fully visible
+Referral Tracking,Code not captured in LocalStorage,"1. Land using ?ref=XYZ -> 2. Check DevTools Application tab","1. Land using ?ref=XYZ -> 2. Continue shopping",Check if 'referet_ref_code' key exists
+Checkout Integration,Referral discount not applied,1. Add item to cart -> 2. Go to checkout via ref link,1. Add item to cart -> 2. Proceed to checkout,Verify discount code appears in Order Summary
+Points & Wallet,Balance displays incorrect value,"1. Login as customer -> 2. Open Wallet popover","1. Tap Wallet icon -> 2. View balance",Verify balance matches backend amount
+Theme Customization,App blocks cannot be moved,1. Online Store -> Customize -> Drag App Block,1. Customize Theme -> Drag App Block on mobile preview,Verify block maintains requested position
+Design Mode,Preview data showing in production,1. Open Shopify Theme Editor -> View Widget,1. View store normally on mobile,Editor should show '(Preview)' text; Mobile should show real data

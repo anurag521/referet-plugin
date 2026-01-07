@@ -1,25 +1,4 @@
-{% schema %}
-{
-  "name": "Referral Widget",
-  "target": "section",
-  "stylesheet": "referral-widget.css",
-  "javascript": "referral-widget.js",
-  "settings": [
-    {
-      "type": "color",
-      "id": "button_color",
-      "label": "Button Color",
-      "default": "#000000"
-    },
-    {
-        "type": "text",
-        "id": "button_text",
-        "label": "Button Text",
-        "default": "Refer & Earn"
-    }
-  ]
-}
-{% endschema %}
+
 
 <div id="referet-widget-container" 
      data-shop="{{ shop.permanent_domain }}" 
@@ -39,6 +18,9 @@
       <div id="referet-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
           <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; position: relative;">
               <span id="referet-close" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+              <div style="text-align: center; margin-bottom: 15px;">
+                  <img src="{{ 'logo.png' | asset_img_url: 'medium' }}" alt="Refertle Logo" width="50" height="50" style="max-height: 50px; width: auto;">
+              </div>
               <h2 id="referet-reward-text" style="font-size: 1.5em; margin-bottom: 20px; text-align: center;">Refer & Earn</h2>
               
               <div id="referet-loading" style="text-align: center; display: none;">
@@ -61,10 +43,36 @@
       <div id="referet-guest-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
           <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 8px; position: relative; text-align: center;">
              <span id="referet-guest-close" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+             <div style="text-align: center; margin-bottom: 15px;">
+                  <img src="{{ 'logo.png' | asset_img_url: 'medium' }}" alt="Refertle Logo" width="50" height="50" style="max-height: 50px; width: auto;">
+             </div>
              <h2>Join the Program</h2>
              <p style="margin: 20px 0;">Login to create your referral link and earn rewards.</p>
-             <a href="/account/login" style="background-color: {{ block.settings.button_color }}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Login Now</a>
+             <a href="{{ routes.account_login_url }}" style="background-color: {{ block.settings.button_color }}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Login Now</a>
           </div>
       </div>
     {% endif %}
   </div>
+
+{% schema %}
+{
+  "name": "Referral Widget",
+  "target": "section",
+  "stylesheet": "referral-widget.css",
+  "javascript": "referral-widget.js",
+  "settings": [
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Color",
+      "default": "#000000"
+    },
+    {
+        "type": "text",
+        "id": "button_text",
+        "label": "Button Text",
+        "default": "Refer & Earn"
+    }
+  ]
+}
+{% endschema %}

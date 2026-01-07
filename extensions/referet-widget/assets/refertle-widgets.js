@@ -1,252 +1,209 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    const pointsContainer = document.getElementById("refertle-points-value");
-    const walletContainer = document.getElementById("refertle-wallet-value");
+    const pointsEl = document.getElementById("refertle-points-value");
+    const walletEl = document.getElementById("refertle-wallet-value");
 
-    if (!pointsContainer && !walletContainer) return;
+    if (!pointsEl && !walletEl) return;
 
-    const shopDomain = window.Shopify ? window.Shopify.shop : window.location.hostname;
-
-    // Check for Shopify Design Mode (Theme Editor)
+    // --- Configuration ---
+    const shop = window.Shopify ? window.Shopify.shop : window.location.hostname;
     const isDesignMode = (window.Shopify && window.Shopify.designMode) || false;
 
-    // Use the App URL directly (Direct Fetch Strategy)
-    // Fallback to the hardcoded dev URL if the liquid variable isn't injected yet
-    // SAFETY: Check if process is defined to prevent browser reference errors
-    const envUrl = (typeof process !== 'undefined' && process.env) ? process.env.SHOPIFY_APP_URL : null;
-    const appUrl = envUrl || window.refertle_app_url || "https://edmond-mouthier-ununiquely.ngrok-free.dev";
+    // SINGLE SOURCE OF TRUTH FOR APP URL
+    // If you need to change the backend URL, CHANGE IT HERE ONLY.
+    // Ideally, use "/apps/rewards" for Proxy, or the ngrok URL for direct dev.
+    if (!window.refertle_app_url) {
+        window.refertle_app_url = "https://edmond-mouthier-ununiquely.ngrok-free.dev";
+        // window.refertle_app_url = "/apps/rewards"; // Use this for Production Proxy
+    }
+    const APP_URL = window.refertle_app_url;
 
-    // Fix: Define customerId from global variable injected by Liquid
     const customerId = window.refertle_customer_id || "";
 
-    console.log("---------------- REFERTLE DEBUG ----------------");
-    console.log("[Refertle] Initializing Widget...");
-    console.log("[Refertle] Shop Domain:", shopDomain);
-    console.log("[Refertle] Customer ID:", customerId);
-    console.log("[Refertle] App URL:", appUrl);
-    console.log("[Refertle] Target Elements:", {
-        points: !!pointsContainer,
-        wallet: !!walletContainer
-    });
+    console.log("---------------- REFERTLE WIDGET ----------------");
+    console.log("[Refertle] Initializing Widget (Proxy Mode)...");
+    console.log("[Refertle] Shop:", shop);
+    console.log("[Refertle] Customer:", customerId);
 
-    // --- DESIGN MODE PREVIEW ---
+    // --- Design Mode Mock ---
     if (isDesignMode) {
         console.log("[Refertle] Design Mode Detected. Rendering mock data.");
-        // Show dummy data so merchant can see how it looks
-        if (pointsContainer) pointsContainer.innerText = "100";
-        if (walletContainer) walletContainer.innerText = "₹500.00"; // Default or infer from settings if possible
+        if (pointsEl) pointsEl.innerText = "100";
+        if (walletEl) walletEl.innerText = "₹500.00";
         return;
     }
 
     try {
-        const fetchUrl = `${appUrl}/api/public/balance?shop=${shopDomain}&logged_in_customer_id=${customerId}`;
-        console.log("[Refertle] Fetching Balance from:", fetchUrl);
+        // Fetch Balance via Proxy
+        // Endpoint: /apps/rewards/balance -> Backend: /api/public/balance
+        const endpoint = `${APP_URL}/api/public/balance?shop=${shop}&logged_in_customer_id=${customerId}`;
+        console.log("[Refertle] Fetching Balance from:", endpoint);
 
-        const response = await fetch(fetchUrl, {
+        const response = await fetch(endpoint, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 "ngrok-skip-browser-warning": "true"
-            },
+            }
         });
+
         console.log("[Refertle] Response Status:", response.status);
 
         if (response.ok) {
-            const text = await response.text();
-            console.log("[Refertle] Raw Body received:", text);
+            const data = await response.json();
+            console.log("[Refertle] Data:", data);
 
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                console.error("[Refertle] Failed to parse JSON:", e);
-                return;
-            }
+            // --- Update Points Widget ---
+            if (pointsEl && data.points !== undefined) {
+                pointsEl.innerText = data.points;
 
-            // Update UI - Points
-            const pointsBtn = document.getElementById("refertle-points-btn");
-            const pointsPopover = document.getElementById("refertle-points-popover");
+                // Helper: Update Popover
+                const popVal = document.getElementById("refertle-points-popover-value");
+                if (popVal) popVal.innerText = data.points;
 
-            if (pointsContainer && data.points !== undefined) {
-                pointsContainer.innerText = data.points;
-                const popValue = document.getElementById("refertle-points-popover-value");
-                if (popValue) popValue.innerText = data.points;
-
-                const popRate = document.getElementById("refertle-point-rate");
-                if (popRate) {
-                    const currency = data.currency || 'INR';
-                    // Check strict null/undefined because 0 is a valid value (though unlikely for rate)
-                    const rate = (data.point_value !== null && data.point_value !== undefined) ? `${Number(data.point_value)} ${currency}` : '-';
-                    popRate.innerText = rate;
+                const rateEl = document.getElementById("refertle-point-rate");
+                if (rateEl) {
+                    const curr = data.currency || "INR";
+                    rateEl.innerText = (data.point_value !== null && data.point_value !== undefined)
+                        ? `${Number(data.point_value)} ${curr}`
+                        : "-";
                 }
 
-                const popExpiry = document.getElementById("refertle-point-expiry");
-                if (popExpiry) {
-                    // If explictly null or undefined, assume no expiry. If 0, it technically expires in 0 days (today).
+                const expiryEl = document.getElementById("refertle-point-expiry");
+                if (expiryEl) {
                     const days = data.points_expiry_days;
-                    popExpiry.innerText = (days !== null && days !== undefined && days > 0) ? `${days} days` : 'No Expiry';
+                    expiryEl.innerText = (days && days > 0) ? `${days} days` : "No Expiry";
                 }
 
-                // --- INJECT REDEEM BUTTON ---
-                // Remove existing if any to avoid duplicates on re-run
-                const existingBtn = document.getElementById("refertle-redeem-btn");
-                if (existingBtn) existingBtn.remove();
+                // Redeem Button Logic
+                const redeemBtn = document.getElementById("refertle-redeem-btn");
+                if (redeemBtn) redeemBtn.remove(); // specific to refactor, ensuring no dupe
 
                 if (Number(data.points) > 0) {
-                    const redeemBtn = document.createElement("button");
-                    redeemBtn.id = "refertle-redeem-btn";
-                    redeemBtn.textContent = "Redeem Points to Wallet";
-                    // Styling inline for speed, or add class
-                    Object.assign(redeemBtn.style, {
-                        marginTop: "12px",
-                        width: "100%",
-                        padding: "8px",
-                        backgroundColor: "#333",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "13px"
+                    const btn = document.createElement("button");
+                    btn.id = "refertle-redeem-btn";
+                    btn.textContent = "Redeem Points to Wallet";
+                    Object.assign(btn.style, {
+                        marginTop: "12px", width: "100%", padding: "8px",
+                        backgroundColor: "#333", color: "#fff", border: "none",
+                        borderRadius: "4px", cursor: "pointer", fontWeight: "bold", fontSize: "13px"
                     });
 
-                    redeemBtn.onclick = async (e) => {
-                        e.stopPropagation(); // prevent closing popover
-                        redeemBtn.disabled = true;
-                        redeemBtn.textContent = "Redeeming...";
-
+                    btn.onclick = async (e) => {
+                        e.stopPropagation();
+                        btn.disabled = true;
+                        btn.textContent = "Redeeming...";
                         try {
-                            const res = await fetch(`${appUrl}/api/public/points/redeem?shop=${shopDomain}`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'ngrok-skip-browser-warning': 'true'
-                                },
+                            // Redeem via Proxy
+                            const redeemRes = await fetch(`${APP_URL}/api/public/points/redeem?shop=${shop}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ customer_id: customerId })
                             });
+                            const redeemData = await redeemRes.json();
 
-                            const result = await res.json();
-                            if (res.ok && result.success) {
-                                alert(`Success! Redeemed ${result.redeem_points} points for ${result.credit_amount} ${result.currency}.`);
-                                window.location.reload(); // Refresh to update wallet and points UI from fresh state
+                            if (redeemRes.ok && redeemData.success) {
+                                alert(`Success! Redeemed ${redeemData.redeem_points} points for ${redeemData.credit_amount} ${redeemData.currency}.`);
+                                window.location.reload();
                             } else {
-                                alert("Redemption failed: " + (result.message || "Unknown error"));
-                                redeemBtn.disabled = false;
-                                redeemBtn.textContent = "Redeem Points to Wallet";
+                                alert("Redemption failed: " + (redeemData.message || "Unknown error"));
+                                btn.disabled = false;
+                                btn.textContent = "Redeem Points to Wallet";
                             }
                         } catch (err) {
                             console.error(err);
                             alert("Error connecting to server.");
-                            redeemBtn.disabled = false;
-                            redeemBtn.textContent = "Redeem Points to Wallet";
+                            btn.disabled = false;
+                            btn.textContent = "Redeem Points to Wallet";
                         }
                     };
-
-                    // Append to popover
-                    if (pointsPopover) pointsPopover.appendChild(redeemBtn);
+                    const popover = document.getElementById("refertle-points-popover");
+                    if (popover) popover.appendChild(btn);
                 }
-            } // Closing pointsContainer check
+            }
 
-            // Update UI - Wallet
-            const walletBtn = document.getElementById("refertle-wallet-btn");
-            const walletPopover = document.getElementById("refertle-wallet-popover");
+            // --- Update Wallet Widget ---
+            if (walletEl && data.wallet !== undefined) {
+                const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency || "INR" });
+                const formattedWallet = fmt.format(data.wallet);
 
-            if (walletContainer && data.wallet !== undefined) {
-                // Format Currency
-                const formatter = new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: data.currency || 'INR',
-                });
-                const formattedWallet = formatter.format(data.wallet);
-                walletContainer.innerText = formattedWallet;
+                walletEl.innerText = formattedWallet;
+                const popVal = document.getElementById("refertle-wallet-popover-value");
+                if (popVal) popVal.innerText = formattedWallet;
 
-                const popWalletVal = document.getElementById("refertle-wallet-popover-value");
-                if (popWalletVal) popWalletVal.innerText = formattedWallet;
-
-                // --- INJECT WALLET BREAKDOWN ---
+                // Breakdown
                 const existingBreakdown = document.getElementById("refertle-wallet-breakdown");
                 if (existingBreakdown) existingBreakdown.remove();
 
-                const breakdownContainer = document.createElement("div");
-                breakdownContainer.id = "refertle-wallet-breakdown";
-                breakdownContainer.style.marginTop = "10px";
-                breakdownContainer.style.fontSize = "13px";
-                breakdownContainer.style.borderTop = "1px solid #eee";
-                breakdownContainer.style.paddingTop = "12px";
+                const breakdown = document.createElement("div");
+                breakdown.id = "refertle-wallet-breakdown";
+                breakdown.style.marginTop = "10px";
+                breakdown.style.fontSize = "13px";
+                breakdown.style.borderTop = "1px solid #eee";
+                breakdown.style.paddingTop = "12px";
 
-                const expiringSum = (data.expiring_credits || []).reduce((sum, c) => sum + Number(c.amount), 0);
-                const permanentAmount = Math.max(0, Number(data.wallet) - expiringSum);
+                const expiringSum = (data.expiring_credits || []).reduce((acc, c) => acc + Number(c.amount), 0);
+                const permanent = Math.max(0, Number(data.wallet) - expiringSum);
 
-                const breakdownFormatter = new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: data.currency || 'INR',
-                });
+                const permDiv = document.createElement("div");
+                permDiv.style.marginBottom = "6px";
+                permDiv.innerHTML = `Permanent Credit: <span class="highlight">${fmt.format(permanent)}</span>`;
+                breakdown.appendChild(permDiv);
 
-                // Permanent Line
-                const permLine = document.createElement("div");
-                permLine.style.marginBottom = "6px";
-                permLine.innerHTML = `Permanent Credit: <span class="highlight">${breakdownFormatter.format(permanentAmount)}</span>`;
-                breakdownContainer.appendChild(permLine);
-
-                // Temporary Line
-                const tempLine = document.createElement("div");
-                tempLine.style.marginBottom = "6px";
-                tempLine.innerHTML = `Temporary Credit: <span class="highlight">${breakdownFormatter.format(expiringSum)}</span>`;
-                breakdownContainer.appendChild(tempLine);
+                const expDiv = document.createElement("div");
+                expDiv.style.marginBottom = "6px";
+                expDiv.innerHTML = `Temporary Credit: <span class="highlight">${fmt.format(expiringSum)}</span>`;
+                breakdown.appendChild(expDiv);
 
                 if (data.expiring_credits && data.expiring_credits.length > 0) {
-                    const expiryTitle = document.createElement("div");
-                    expiryTitle.innerText = "Expiry Schedule:";
-                    expiryTitle.style.fontWeight = "bold";
-                    expiryTitle.style.marginTop = "10px";
-                    expiryTitle.style.marginBottom = "4px";
-                    expiryTitle.style.fontSize = "11px";
-                    expiryTitle.style.color = "#777";
-                    breakdownContainer.appendChild(expiryTitle);
+                    const title = document.createElement("div");
+                    title.innerText = "Expiry Schedule:";
+                    title.style.fontWeight = "bold";
+                    title.style.marginTop = "10px";
+                    title.style.marginBottom = "4px";
+                    title.style.fontSize = "11px";
+                    title.style.color = "#777";
+                    breakdown.appendChild(title);
 
-                    data.expiring_credits.forEach(credit => {
-                        const item = document.createElement("div");
-                        item.style.marginBottom = "2px";
-                        item.style.color = "#d63031"; // red for expiry
-                        item.style.fontSize = "12px";
-
-                        const date = new Date(credit.expiresAt).toLocaleDateString();
-                        const amt = breakdownFormatter.format(credit.amount);
-
-                        item.innerText = `${amt} (Expires: ${date})`;
-                        breakdownContainer.appendChild(item);
+                    data.expiring_credits.forEach(c => {
+                        const row = document.createElement("div");
+                        row.style.marginBottom = "2px";
+                        row.style.color = "#d63031";
+                        row.style.fontSize = "12px";
+                        const dateStr = new Date(c.expiresAt).toLocaleDateString();
+                        row.innerText = `${fmt.format(c.amount)} (Expires: ${dateStr})`;
+                        breakdown.appendChild(row);
                     });
                 }
 
-                if (walletPopover) walletPopover.appendChild(breakdownContainer);
+                const popover = document.getElementById("refertle-wallet-popover");
+                if (popover) popover.appendChild(breakdown);
             }
 
-            // Click Handlers for Popovers
-            const togglePopover = (btn, popover) => {
-                if (!btn || !popover) return;
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isVisible = popover.classList.contains('visible');
-                    // Close all others
-                    document.querySelectorAll('.refertle-popover').forEach(p => p.classList.remove('visible'));
-                    if (!isVisible) popover.classList.add('visible');
-                });
+            // --- Popover Toggle Logic ---
+            const setupPopover = (btn, popover) => {
+                if (btn && popover) {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        // Close others
+                        const wasVisible = popover.classList.contains("visible");
+                        document.querySelectorAll(".refertle-popover").forEach(el => el.classList.remove("visible"));
+                        if (!wasVisible) popover.classList.add("visible");
+                    });
+                }
             };
 
-            if (pointsBtn) togglePopover(pointsBtn, document.getElementById("refertle-points-popover"));
-            if (walletBtn) togglePopover(walletBtn, walletPopover);
+            setupPopover(document.getElementById("refertle-points-btn"), document.getElementById("refertle-points-popover"));
+            setupPopover(document.getElementById("refertle-wallet-btn"), document.getElementById("refertle-wallet-popover"));
 
-            // Close on click outside
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.refertle-popover').forEach(p => p.classList.remove('visible'));
+            document.addEventListener("click", () => {
+                document.querySelectorAll(".refertle-popover").forEach(el => el.classList.remove("visible"));
             });
-
-
 
         } else {
             console.error("Refertle: Failed to fetch balance", response.status);
         }
 
-    } catch (error) {
-        console.error("Refertle: Error fetching balance", error);
+    } catch (e) {
+        console.error("Refertle: Error fetching balance", e);
     }
 });

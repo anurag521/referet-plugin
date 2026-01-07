@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useFetcher, redirect } from "react-router";
 import {
@@ -11,6 +11,7 @@ import {
     Button,
     Banner,
     InlineStack,
+    Modal,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -42,7 +43,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             return { success: true, message: "Products synced successfully!" };
         } catch (e: any) {
             console.error("Sync failed", e);
-            return { success: false, message: "Sync failed. Check logs." };
+            let message = "Sync failed. Check logs.";
+            if (e.message) {
+                const match = e.message.match(/^API Error \d+: (.+)$/);
+                if (match) {
+                    try {
+                        const json = JSON.parse(match[1]);
+                        if (json.message) message = json.message;
+                        else message = match[1];
+                    } catch (err) {
+                        message = match[1];
+                    }
+                } else {
+                    message = e.message;
+                }
+            }
+            return { success: false, message };
         }
     }
 
@@ -71,6 +87,16 @@ export default function Index() {
     const syncMessage = fetcher.data?.message;
     const syncSuccess = fetcher.data?.success;
 
+    const [showSyncModal, setShowSyncModal] = useState(false);
+
+    useEffect(() => {
+        if (syncMessage && !syncSuccess) {
+            setShowSyncModal(true);
+        }
+    }, [syncMessage, syncSuccess]);
+
+    const handleCloseModal = () => setShowSyncModal(false);
+
     return (
         <Page>
             <TitleBar title="Refertle Dashboard" />
@@ -79,6 +105,9 @@ export default function Index() {
                     <Layout.Section>
                         <Card>
                             <BlockStack gap="500">
+                                <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                                    <img src="/logo.png" alt="Refertle Logo" style={{ maxHeight: '60px', width: 'auto' }} />
+                                </div>
                                 <Text as="h2" variant="headingMd">
                                     Welcome{isAuthenticated ? `, ${merchantName}` : ''}
                                 </Text>
@@ -130,8 +159,24 @@ export default function Index() {
                                                 </Button>
                                             </fetcher.Form>
                                         </InlineStack>
-                                        {syncMessage && (
-                                            <Banner tone={syncSuccess ? "success" : "critical"}>
+                                        <Modal
+                                            open={showSyncModal}
+                                            onClose={handleCloseModal}
+                                            title="Sync Error"
+                                            primaryAction={{
+                                                content: 'Close',
+                                                onAction: handleCloseModal,
+                                            }}
+                                        >
+                                            <Modal.Section>
+                                                <Banner tone="critical">
+                                                    <p>{syncMessage}</p>
+                                                </Banner>
+                                            </Modal.Section>
+                                        </Modal>
+
+                                        {syncMessage && syncSuccess && (
+                                            <Banner tone="success">
                                                 <p>{syncMessage}</p>
                                             </Banner>
                                         )}
@@ -141,7 +186,7 @@ export default function Index() {
                             </BlockStack>
                         </Card>
 
-                        
+
                     </Layout.Section>
                 </Layout>
             </BlockStack>

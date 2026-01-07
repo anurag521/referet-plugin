@@ -23,10 +23,10 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <PolarisAppProvider i18n={polarisTranslations}>
         <NavMenu>
-          <Link to="/app" rel="home">Dashboard</Link>
-          <Link to="/app/campaigns">Campaigns</Link>
-          <Link to="/app/referrals">Referrals</Link>
-          <Link to="/app/rewards">Rewards</Link>
+          <Link to="/app" rel="home">
+            <img src="/logo.png" alt="Refertle Logo" style={{ height: '20px', marginRight: '10px' }} />
+            Dashboard
+          </Link>
         </NavMenu>
         <Outlet />
       </PolarisAppProvider>

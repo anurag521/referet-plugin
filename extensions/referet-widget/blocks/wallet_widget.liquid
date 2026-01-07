@@ -1,15 +1,17 @@
 <script>
-  window.refertle_app_url = "https://edmond-mouthier-ununiquely.ngrok-free.dev";
   window.refertle_customer_id = "{{ customer.id }}";
 </script>
 
-{% if customer %}
+{% if customer or request.design_mode %}
 <div class="refertle-widget-wrapper refertle-wallet" style="padding: {{ block.settings.padding }}px;">
   <button id="refertle-wallet-btn" class="refertle-btn" style="color: {{ block.settings.color }}; border-color: {{ block.settings.color }};">
     {{ block.settings.label }} <span id="refertle-wallet-value">...</span>
   </button>
   
   <div id="refertle-wallet-popover" class="refertle-popover">
+     <div style="text-align: center; margin-bottom: 10px;">
+         <img src="{{ 'logo.png' | asset_img_url: 'small' }}" alt="Logo" width="30" height="30" style="max-height: 30px;">
+     </div>
      <h3>Wallet Details</h3>
      <p>Current Balance: <span id="refertle-wallet-popover-value" class="highlight">...</span></p>
      <p style="font-size: 12px; color: #777;">Use this balance at checkout to save on your orders.</p>

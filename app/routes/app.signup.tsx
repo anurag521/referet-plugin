@@ -10,6 +10,7 @@ import {
     BlockStack,
     TextField,
     Banner,
+    Modal,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { apiCall, apiCallRaw } from "../api.server";
@@ -75,7 +76,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     } catch (error: any) {
         console.error("Signup Failed", error);
-        return { error: error.message || "Registration failed. Please try again." };
+        let message = error.message || "Registration failed. Please try again.";
+
+        // Attempt to parse out the "API Error 500: {...}" stuff
+        const match = message.match(/^API Error \d+: (.+)$/);
+        if (match) {
+            try {
+                const json = JSON.parse(match[1]);
+                // If the backend sent a nice {"message": "..."} use that
+                if (json.message) message = json.message;
+                else message = match[1]; // Fallback to raw text body
+            } catch (e) {
+                // Not JSON, just use the text body
+                message = match[1];
+            }
+        }
+        return { error: message };
     }
 };
 
@@ -96,6 +112,16 @@ export default function Signup() {
             navigate("/app");
         }
     }, [isAuthenticated, navigate]);
+
+    const [showErrorModal, setShowErrorModal] = useState(false);
+
+    useEffect(() => {
+        if (actionData?.error) {
+            setShowErrorModal(true);
+        }
+    }, [actionData]);
+
+    const handleCloseModal = () => setShowErrorModal(false);
 
     const isSubmitting = nav.state === "submitting";
 
@@ -124,6 +150,9 @@ export default function Signup() {
                     <Layout.Section>
                         <Card>
                             <BlockStack gap="500">
+                                <div style={{ textAlign: 'center', marginBottom: '15px' }}>
+                                    <img src="/logo.png" alt="Refertle Logo" style={{ maxHeight: '80px', width: 'auto' }} />
+                                </div>
                                 <Text as="h2" variant="headingMd">
                                     Complete your registration
                                 </Text>
@@ -131,11 +160,21 @@ export default function Signup() {
                                     Set up your merchant account for shop: <strong>{shop}</strong>
                                 </Text>
 
-                                {actionData?.error && (
-                                    <Banner tone="critical">
-                                        <p>{actionData.error}</p>
-                                    </Banner>
-                                )}
+                                <Modal
+                                    open={showErrorModal}
+                                    onClose={handleCloseModal}
+                                    title="Registration Error"
+                                    primaryAction={{
+                                        content: 'Close',
+                                        onAction: handleCloseModal,
+                                    }}
+                                >
+                                    <Modal.Section>
+                                        <Banner tone="critical">
+                                            <p>{actionData?.error}</p>
+                                        </Banner>
+                                    </Modal.Section>
+                                </Modal>
 
                                 <Form method="post">
                                     <BlockStack gap="400">
