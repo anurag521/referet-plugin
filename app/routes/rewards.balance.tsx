@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-
+const BACKEND_URL = process.env.BACKEND_API_URL || "http://localhost:4000";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     try {
         console.log(`[RewardsProxy] HIT: ${request.url}`);
@@ -16,7 +16,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         // 2. Prepare Backend URL
         const url = new URL(request.url);
         const query = url.searchParams;
-        const backendUrl = `http://localhost:4000/api/proxy/balance?${query.toString()}`;
+        const backendUrl = `${BACKEND_URL}/api/proxy/balance?${query.toString()}`;
         console.log(`[RewardsProxy] Forwarding to: ${backendUrl}`);
 
         // 3. Fetch from Backend

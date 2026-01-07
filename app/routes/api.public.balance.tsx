@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
+const BACKEND_URL = process.env.BACKEND_API_URL || "http://localhost:4000";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     // CORS Headers are crucial for Direct Fetch from Storefront
@@ -57,7 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         // 6. Append to Backend URL
         query.set('signature', signature);
 
-        const backendUrl = `http://localhost:4000/api/proxy/balance?${query.toString()}`;
+        const backendUrl = `${BACKEND_URL}/api/proxy/balance?${query.toString()}`;
         console.log(`[PublicBalance] Forwarding to: ${backendUrl}`);
 
         const response = await fetch(backendUrl, {
