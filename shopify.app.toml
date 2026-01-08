@@ -33,9 +33,37 @@ api_version = "2026-01"
   topics = [ "orders/fulfilled" ]
   uri = "/webhooks"
 
+  [[webhooks.subscriptions]]
+  topics = [ "products/create" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "products/update" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "products/delete" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "collections/create" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "collections/update" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "collections/delete" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "inventory_levels/update" ]
+  uri = "/webhooks"
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_customers,read_orders,write_discounts,write_products,read_store_credit_account_transactions,write_store_credit_account_transactions,read_store_credit_accounts"
+scopes = "read_customers,read_orders,write_discounts,read_products,write_products,read_store_credit_account_transactions,write_store_credit_account_transactions,read_store_credit_accounts,read_inventory"
 
 [auth]
 redirect_urls = [ "https://refertle-backend-dmfzov-6f1e66-144-24-97-90.traefik.me/api/auth" ]

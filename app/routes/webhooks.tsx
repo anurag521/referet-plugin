@@ -60,6 +60,66 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           await sessionStorage.deleteSession(session.id);
         }
         break;
+      case "COLLECTIONS_CREATE":
+        console.log(`[App Webhook] Collections Create for ${shop}`);
+        await fetch(`${backendBase}/webhooks/collections/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-shopify-shop-domain": shop,
+            "x-shopify-topic": topic
+          },
+          body: JSON.stringify(payload),
+        });
+        break;
+      case "PRODUCTS_UPDATE":
+        console.log(`[App Webhook] Products Update for ${shop}`);
+        await fetch(`${backendBase}/webhooks/products/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-shopify-shop-domain": shop,
+            "x-shopify-topic": topic
+          },
+          body: JSON.stringify(payload),
+        });
+        break;
+      case "COLLECTIONS_UPDATE":
+        console.log(`[App Webhook] Collections Update for ${shop}`);
+        await fetch(`${backendBase}/webhooks/collections/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-shopify-shop-domain": shop,
+            "x-shopify-topic": topic
+          },
+          body: JSON.stringify(payload),
+        });
+        break;
+      case "COLLECTIONS_DELETE":
+        console.log(`[App Webhook] Collections Delete for ${shop}`);
+        await fetch(`${backendBase}/webhooks/collections/delete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-shopify-shop-domain": shop,
+            "x-shopify-topic": topic
+          },
+          body: JSON.stringify(payload),
+        });
+        break;
+      case "INVENTORY_LEVELS_UPDATE":
+        console.log(`[App Webhook] Inventory Update for ${shop}`);
+        await fetch(`${backendBase}/webhooks/inventory/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-shopify-shop-domain": shop,
+            "x-shopify-topic": topic
+          },
+          body: JSON.stringify(payload),
+        });
+        break;
     }
   } catch (error) {
     console.error(`Error forwarding webhook ${topic}:`, error);

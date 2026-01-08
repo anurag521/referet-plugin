@@ -15,7 +15,7 @@ import {
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import { apiCall } from "../api.server";
+import { apiCall, apiCallRaw } from "../api.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { session } = await authenticate.admin(request);
@@ -62,14 +62,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
     }
 
+
     if (intent === "logout") {
+        let headers = new Headers();
         try {
-            await apiCall(`/api/auth/logout`, "POST", undefined, request);
+            const res = await apiCallRaw(`/api/auth/logout`, "POST", undefined, { request });
+            // Forward the Set-Cookie header to clear it in the browser
+            const setCookie = res.headers.get('Set-Cookie');
+            if (setCookie) {
+                headers.append('Set-Cookie', setCookie);
+            }
         } catch (e) {
             console.error("Logout failed", e);
         }
-        // Redirect to login page
-        throw redirect("/app/login");
+        // Redirect to login page with the clear-cookie header
+        throw redirect("/app/login", { headers });
     }
     return null;
 };
