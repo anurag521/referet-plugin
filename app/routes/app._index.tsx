@@ -143,9 +143,14 @@ export default function Index() {
                                         <Banner tone="warning">
                                             <p>You are not logged in. Please login to view your dashboard.</p>
                                         </Banner>
-                                        <Button onClick={() => navigate("/app/login")}>
-                                            Login to Dashboard
-                                        </Button>
+                                        <InlineStack gap="300">
+                                            <Button onClick={() => navigate("/app/login")}>
+                                                Login to Dashboard
+                                            </Button>
+                                            <Button onClick={() => window.open("https://refertle.vercel.app/login", "_blank")}>
+                                                Login via Web
+                                            </Button>
+                                        </InlineStack>
                                     </BlockStack>
                                 )}
 
@@ -165,6 +170,10 @@ export default function Index() {
                                                     Logout
                                                 </Button>
                                             </fetcher.Form>
+
+                                            <Button onClick={() => window.open("https://refertle.vercel.app/", "_blank")}>
+                                                Go to Refertle
+                                            </Button>
                                         </InlineStack>
                                         <Modal
                                             open={showSyncModal}

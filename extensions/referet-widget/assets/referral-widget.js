@@ -82,8 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function checkCampaign() {
         // if (!isLoggedIn) return; // Allow guests to see the button too
         try {
-            const res = await fetch(`${API_BASE}/api/public/campaigns/check?shop=${shop}&product_id=${productId}&collection_ids=${collectionIds}`, {
-                headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" }
+            const res = await fetch(`${API_BASE}/api/public/campaigns/check?shop=${shop}&product_id=${productId}&collection_ids=${collectionIds}&_t=${Date.now()}`, {
+                headers: { "ngrok-skip-browser-warning": "true", "Content-Type": "application/json" },
+                cache: "no-store"
             });
             if (res.ok) {
                 const data = await res.json();
