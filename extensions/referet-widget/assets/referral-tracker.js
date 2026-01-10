@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Referet (Global): Captured referral code:", refCode);
         localStorage.setItem('referet_ref_code', refCode);
 
+        // --- CLEAN URL (Remove ?ref=... parameter) ---
+        const url = new URL(window.location.href);
+        url.searchParams.delete('ref');
+        window.history.replaceState({}, document.title, url.toString());
+
         // --- TRACK CLICK IMMEDIATELY ---
         fetch(`${API_BASE}/api/public/referrals/click?shop=${shop}`, {
             method: 'POST',

@@ -193,6 +193,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const whatsappBtn = document.getElementById('referet-whatsapp-btn');
+    if (whatsappBtn && linkInput) {
+        whatsappBtn.addEventListener('click', () => {
+            const link = linkInput.value;
+            if (link) {
+                const text = encodeURIComponent(`Check out this product: ${link}`);
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+            }
+        });
+    }
+
     function resetModal() {
         if (loadingDiv) loadingDiv.style.display = 'none';
         if (resultDiv) resultDiv.style.display = 'none';
