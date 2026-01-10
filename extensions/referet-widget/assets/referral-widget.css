@@ -18,13 +18,15 @@
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.2s, opacity 0.2s;
-    background-color: #f1f1f1;
-    /* Default/Fallback */
-    color: #333;
+    background-color: #1cd6b1;
+    /* Primary Teal */
+    color: #ffffff;
 }
 
 .refertle-btn:hover {
-    opacity: 0.9;
+    background-color: #16a386;
+    /* Darker Teal */
+    opacity: 1;
 }
 
 .refertle-popover {
